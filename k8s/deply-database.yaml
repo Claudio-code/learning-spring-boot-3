@@ -12,8 +12,9 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: springboot-mysql
-  name: springboot-mysql
+    app: springbt-mysql
+  name: springbt-mysql
+  namespace: springboot-api
 spec:
   externalTrafficPolicy: Cluster
   ports:
@@ -23,8 +24,81 @@ spec:
     targetPort: 3306
   type: NodePort
   selector:
-    app: springboot-mysql
+    app: springbt-mysql
 
 ---
 
 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: springbt-mysql
+  name: springbt-mysql
+  namespace: springboot-api
+spec:
+  selector:
+    matchLabels:
+      app: springbt-mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: springbt-mysql
+    spec:
+      containers:
+      - image: mysql:8.0.31
+        name: springbt-mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: root
+        - name: MYSQL_DATABASE
+          value: springboot
+        ports:
+        - containerPort: 3306
+          name: springbt-mysql
+        volumeMounts:
+        - name: springboot-mysql-persist-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: springboot-mysql-persist-storage
+        persistentVolumeClaim:
+          claimName: springboot-mysql-pv-claim
+
+
+
+
+---
+
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: springboot-mysql-pv-claim
+  namespace: springboot-api
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 21Gi
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: springboot-mysql-pv-volume
+  labels:
+    type: local
+  namespace: springboot-api
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 21Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
