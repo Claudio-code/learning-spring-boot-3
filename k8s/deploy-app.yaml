@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: springbt-api
+  name: springbt-api
+  namespace: springboot-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      labels:
+        app: springbt-api
+  template:
+    metadata:
+      labels:
+        app: springbt-api
+    spec:
+      containers:
+        - image: claudio2424/springbt-api:latest
+          imagePolicy: Always
+          name: springbt-api
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+          - name: SPRING_PROFILES_ACTIVE
+            value: prod
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: springbt-api
+  name: springbt-api
+  namespace: springbt-api
+spec:
+  externalTrafficPolicy: Cluster
+  ports:
+  - port: 8080
+    nodePort: 3233
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: springbt-api
+  type: NodePort
+
